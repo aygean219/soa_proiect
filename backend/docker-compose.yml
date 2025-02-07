@@ -4,7 +4,7 @@ services:
     image: mongo:7.0
     restart: always
     ports:
-      - "27017:27017" # expune portul 27017 pentru a putea accesa MongoDB din afacerea containerului
+      - "27017:27017"
     environment:
       - MONGO_INITDB_ROOT_USERNAME=admin # utilizatorul pentru MongoDB
       - MONGO_INITDB_ROOT_PASSWORD=admin # parola utilizatorului
@@ -17,7 +17,7 @@ services:
       context: .
     restart: always
 
-  matches-api: #concerts service
+  matches-api: #matches service
     container_name: matches-api
     build:
       dockerfile: match-service/Dockerfile
