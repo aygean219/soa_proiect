@@ -17,7 +17,7 @@ amqp.connect("amqp://admin:admin123@rabbitmq",  function(error0, connection) {
         channel.consume(queue, function(msg) {
             const message = JSON.parse(msg.content.toString());
 
-            console.log(" Sending email with following info: \nEmail: %s\nPlayer 1: %s\nPlayer 2: %s\nTournament: %s\nCourt: %s\nDate: %s\nPrice: %s",
+            console.log(" Sending email with following info:  Email: %s Player 1: %s Player 2: %s Tournament: %s Court: %s Date: %s Price: %s",
                 message.email,
                 message.player1,
                 message.player2,
