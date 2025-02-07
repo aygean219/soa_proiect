@@ -1,4 +1,4 @@
-      Creating Secured REST APIs
+Creating Secured REST APIs
 Overview
 REST APIs allow different systems to communicate over the internet using standard HTTP methods like GET, POST, PUT, and DELETE. Since these APIs handle data exchange, they must be secured to prevent unauthorized access.
 Securing REST APIs
