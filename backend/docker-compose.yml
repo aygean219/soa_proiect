@@ -1,0 +1,113 @@
+services:
+  database:
+    container_name: database
+    image: mongo:7.0
+    restart: always
+    ports:
+      - "27017:27017" # expune portul 27017 pentru a putea accesa MongoDB din afacerea containerului
+    environment:
+      - MONGO_INITDB_ROOT_USERNAME=admin # utilizatorul pentru MongoDB
+      - MONGO_INITDB_ROOT_PASSWORD=admin # parola utilizatorului
+      - MONGO_INITDB_DATABASE=test # baza de date implicită
+
+  auth-api: #authentication service
+    container_name: auth-api
+    build:
+      dockerfile: authservice/Dockerfile
+      context: .
+    restart: always
+
+  matches-api: #concerts service
+    container_name: matches-api
+    build:
+      dockerfile: match-service/Dockerfile
+      context: .
+    restart: always
+
+  nginx: #load balancer using nginx
+    container_name: nginx
+    build:
+      dockerfile: Dockerfile
+      context: nginx
+    restart: always
+    ports:
+      - "80:80"
+    depends_on:
+      - auth-api
+      - matches-api
+      - tickets-api
+
+  zookeeper:
+    container_name: zookeeper
+    image: confluentinc/cp-zookeeper
+    restart: always
+    ports:
+      - "2181:2181"
+    environment:
+      ZOOKEEPER_CLIENT_PORT: 2181
+
+  kafka:
+    container_name: kafka
+    image: confluentinc/cp-kafka
+    restart: always
+    depends_on:
+      - zookeeper
+    ports:
+      - "29092:29092"
+    environment:
+      KAFKA_BROKER_ID: 1
+      KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:9092,PLAINTEXT_HOST://localhost:29092
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+
+  tickets-api: #ticket service
+    container_name: tickets-api
+    build:
+      dockerfile: tickets-service/Dockerfile
+      context: .
+    restart: always
+    depends_on:
+      - kafka
+
+  rabbitmq:
+    image: rabbitmq:management
+    container_name: rabbitmq
+    ports:
+      - "5672:5672"    # RabbitMQ messaging port
+      - "15672:15672"  # RabbitMQ management UI port
+    environment:
+      RABBITMQ_DEFAULT_USER: admin  # Set a custom username
+      RABBITMQ_DEFAULT_PASS: admin123  # Set a custom password
+    volumes:
+      - rabbitmq_data:/var/lib/rabbitmq  # Persistent storage for RabbitMQ data
+
+  invoices-api: #invoices service
+    container_name: invoices-api
+    build:
+      dockerfile: invoices-service/Dockerfile
+      context: .
+    restart: always
+    depends_on:
+      - kafka
+      - rabbitmq
+
+  email-api:
+    container_name: email-api
+    build:
+      dockerfile: email-service/Dockerfile
+      context: .
+    restart: always
+    environment:
+      - RABBITMQ_CONNECT=amqp://admin:admin123@rabbitmq
+    depends_on:
+      - rabbitmq
+
+  frontend:
+    container_name: frontend-service
+    build:
+      context: ../frontend
+      dockerfile: Dockerfile
+
+volumes:
+  rabbitmq_data:
